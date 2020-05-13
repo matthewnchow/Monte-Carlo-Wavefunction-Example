@@ -267,13 +267,12 @@ def run_2():
                 cumulative_dpm = 0
                 # Calculate each jump probability, if epsilon less than the sum of the dpm up to this point, select jump
                 for L in ls:
-                    c[i] = np.matmul(L, c[i-1])  # Temporary, just used to calc dp
-                    dpm = dt*np.abs(np.dot(c[i], np.conjugate(c[i])))
+                    c[i] = np.matmul(L, c[i-1])  # Temporary, just used to calc dpm
+                    dpm = dt*np.abs(np.dot(c[i], np.conjugate(c[i])))  # See Molmer eqn
                     cumulative_dpm += dpm
                     if epsilon < cumulative_dpm:
                         c[i] /= np.sqrt(dpm/dt)
                         break
-            # c[i] = np.array([1, 0, 0, 0, 0, 0])          # All population moves to ground state if there is a jump
             else:                                # Evolve according to H_effective and re-normalize
                 c[i] = c[i-1] - 1j * dt * np.matmul(h, c[i - 1])
                 c[i] = c[i]/(np.dot(c[i], np.conjugate(c[i])))
@@ -320,32 +319,50 @@ def run_2():
     d_yy *= 0.5
     # print(d_yy)
 
+    """
+    l_pi_plus = 1j*np.zeros((len(psi_0y), len(psi_0y)))          # Lindblad jump operator for pi transition b/w g/e m=+1
+    l_pi_plus[2, 5] = 1                                             # Puts excited +1 into +1 ground
+    l_pi_min = 1j*np.zeros((len(psi_0y), len(psi_0y)))          # Lindblad jump operator for pi transition b/w g/e m=-1
+    l_pi_min[0, 3] = 1
+    l_sig_plus = 1j*np.zeros((len(psi_0y), len(psi_0y)))         # Lindblad jump operator for sigma trans |+e> -> |0g>
+    l_sig_plus[1, 5] = 1                                            # Puts excited -1 into 0 ground
+    l_sig_min = 1j*np.zeros((len(psi_0y), len(psi_0y)))         # Lindblad jump operator for sigma trans |-e> -> |0g>
+    l_sig_min[1, 3] = 1
+    l_y = [l_pi_plus, l_pi_min, l_sig_plus, l_sig_min]
+    print(l_pi_min)
+    print(np.matmul(l_pi_min, np.array([0, 0, 0, 1, 0, 0])))
+    print(np.dot(psi_darky, np.matmul(l_pi_min, np.array([0, 0, 0, 1, 0, 0]))))
+    """
+
     l_pi = 1j*np.zeros((len(psi_0y), len(psi_0y)))          # Lindblad jump operator for (both) pi transitions
-    l_pi[0, 3] = l_pi[2, 5] = 1                                 # Puts excited +/-1 into +/-1 ground
+    l_pi[2, 5] = l_pi[0, 3] = 1                                             # Puts excited +/-1 into +/-1 ground
     l_sig = 1j*np.zeros((len(psi_0y), len(psi_0y)))         # Lindblad jump operator for (both) sigma transitions
-    l_sig[1, 3] = l_sig[1, 5] = 1                                # Puts excited +/-1 into 0 ground
+    l_sig[1, 5] = 1                                            # Puts excited +/-1 into 0 ground
     l_y = [l_pi, l_sig]
-    print(l_y)
+    print(l_pi)
+    print(np.matmul(l_sig, np.array([0, 1/np.sqrt(2), 0, 0.5, 0, 0.5])))
 
     h_effy = -0.5j * proj_e - 1 * Omega*0.5*(d_yy + np.transpose(np.conjugate(d_yy)))          # Effective Hamiltonian
-    print(h_effy)
+    # print(h_effy)
     # print(h_effy - np.transpose(np.conjugate(h_effy)))
 
-    psi = unravel_y(h=h_effy, c_0=psi_0y, ls=l_y)
-    p_d = np.abs(np.matmul(psi, psi_darky))**2  # probability of being in the dark state
+    # p_e = np.abs(np.matmul(psi, np.array([0, 0, 0, 1, 1, 1])))**2  # probability of being in any excited state
     # print(np.abs(np.matmul(psi[1:5, :], psi_dark))**2)
-
-    ax[0, 1].plot(ts, p_d)
-    ax[0, 1].set_title("Single Trajectory, Y Basis")
-    ax[0, 1].set_ylim(-0.05, 1)
 
     m_trials = 100                 # Molmer averages 100 wvfns
     p_ds = np.zeros((m_trials, len(p_d)))
     p_ds[0] = p_d
 
-    for m in range(1, m_trials):
-        psi = unravel_y()
-        p_ds[m] = np.abs(np.matmul(psi, psi_darky)) ** 2
+    for m in range(m_trials):
+        psi = unravel_y(h=h_effy, c_0=psi_0y, ls=l_y)
+        p_d = np.abs(np.matmul(psi, psi_darky)) ** 2  # probability of being in the dark state
+        if m < 1:
+            ax[0, 1].plot(ts, p_d)
+        p_ds[m] = p_d
+    # ax[0, 1].plot(ts, p_d)
+    ax[0, 1].set_title("Single Trajectory, Y Basis")
+    ax[0, 1].set_ylim(-0.05, 1)
+
 
     uncertainty = np.std(p_ds, 0)/np.sqrt(m_trials)
 
