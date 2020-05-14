@@ -290,6 +290,7 @@ def run_2():
     ax[0, 0].set_ylabel("Prob to be in |dark>")
     ax[0, 0].set_ylim(0, 1)
 
+
     m_trials = 100                 # Molmer averages 100 wvfns
     p_ds = np.zeros((m_trials, len(p_d)))
     p_ds[0] = p_d
@@ -307,9 +308,11 @@ def run_2():
     ax[1, 0].set_ylabel("Prob to be in |dark>")
     ax[1, 0].set_ylim(-0.05, 1)
 
+
     # Now repeat the problem in the y basis
-    psi_0y = np.array([0.5, 1j/np.sqrt(2), 0.5, 0, 0, 0])   # Assume atom starts in the mz = -1 state
-    psi_darky = np.array([0, 1, 0, 0, 0, 0])                 # dark state in the Z basis
+    # psi_0y = np.array([0.5, 1j/np.sqrt(2), 0.5, 0, 0, 0])   # Assume atom starts in the mz = -1 state
+    psi_0y = np.array([1, 1, 0, 0, 0, 0])/np.sqrt(2)   # Assume atom starts in the mz = -1 state
+    psi_darky = np.array([0, 1, 0, 0, 0, 0])                 # dark state in the y basis
     psi = 1j*np.zeros((t_steps, len(psi_0)))                 # Wavefunction at each time step
     psi[0] = psi_0
 
@@ -334,34 +337,55 @@ def run_2():
     print(np.dot(psi_darky, np.matmul(l_pi_min, np.array([0, 0, 0, 1, 0, 0]))))
     """
 
+    Omega = 3                                       # Rabi frequency
+    t_steps = 1000                                  # Number of time steps per unravelling
+
     l_pi = 1j*np.zeros((len(psi_0y), len(psi_0y)))          # Lindblad jump operator for (both) pi transitions
-    l_pi[2, 5] = l_pi[0, 3] = 1                                             # Puts excited +/-1 into +/-1 ground
+    l_pi[2, 5] = l_pi[0, 3] = 1/np.sqrt(2)                                             # Puts excited +/-1 into +/-1 ground
     l_sig = 1j*np.zeros((len(psi_0y), len(psi_0y)))         # Lindblad jump operator for (both) sigma transitions
-    l_sig[1, 5] = 1                                            # Puts excited +/-1 into 0 ground
+    l_sig[1, 5] = l_sig[1, 3] = 1/np.sqrt(2)                                           # Puts excited +/-1 into 0 ground
     l_y = [l_pi, l_sig]
     print(l_pi)
-    print(np.matmul(l_sig, np.array([0, 1/np.sqrt(2), 0, 0.5, 0, 0.5])))
-
+    bright = np.matmul(l_pi, np.array([0, 0, 0, 1, 0, 1]))
+    print(bright)
     h_effy = -0.5j * proj_e - 1 * Omega*0.5*(d_yy + np.transpose(np.conjugate(d_yy)))          # Effective Hamiltonian
+    print(h_effy)
+    print(np.matmul(d_yy, psi_darky))
+
+    h_jumpy = h_effy - np.transpose(np.conjugate(h_effy))
+    print(np.dot(np.conjugate(psi_darky), np.matmul(h_jumpy, psi_darky)))
+    # for i in range(t_steps):
+    #     psi
+
     # print(h_effy)
     # print(h_effy - np.transpose(np.conjugate(h_effy)))
 
     # p_e = np.abs(np.matmul(psi, np.array([0, 0, 0, 1, 1, 1])))**2  # probability of being in any excited state
     # print(np.abs(np.matmul(psi[1:5, :], psi_dark))**2)
 
-    m_trials = 100                 # Molmer averages 100 wvfns
-    p_ds = np.zeros((m_trials, len(p_d)))
-    p_ds[0] = p_d
+    m_trials = 100                # Molmer averages 100 wvfns
+    p_ds = np.zeros((m_trials, t_steps))
 
     for m in range(m_trials):
         psi = unravel_y(h=h_effy, c_0=psi_0y, ls=l_y)
+        # check_norm = np.abs(np.linalg.norm(psi, axis=1)) ** 2         # make sure that the norm is 1
+        # p_not_d = np.abs(np.matmul(psi, np.array([1, 0, 1, 1, 1, 1]))) ** 2  # probability of not dark state
         p_d = np.abs(np.matmul(psi, psi_darky)) ** 2  # probability of being in the dark state
+        p_0 = np.abs(np.matmul(psi, np.array([1, 0, 0, 0, 0, 0]))) ** 2  # probability of being in -1 ground
+        p_3 = np.abs(np.matmul(psi, np.array([0, 0, 0, 1, 0, 0]))) ** 2  # probability of being in -1 ground
         if m < 1:
             ax[0, 1].plot(ts, p_d)
+            # plt.figure(m)  #  Debugging, plot to look at various populations over time
+            # plt.plot(ts, p_0)
+            # plt.plot(ts, p_3)
+            # plt.plot(ts, p_d, 'k')
+            # plt.ylim(-0.05, 1.05)
+        # if m == 3:
+        #     break
         p_ds[m] = p_d
     # ax[0, 1].plot(ts, p_d)
     ax[0, 1].set_title("Single Trajectory, Y Basis")
-    ax[0, 1].set_ylim(-0.05, 1)
+    ax[0, 1].set_ylim(-0.05, 1.05)
 
 
     uncertainty = np.std(p_ds, 0)/np.sqrt(m_trials)
