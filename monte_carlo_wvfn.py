@@ -171,10 +171,10 @@ def run_1c():
         return c
 
     n_taus = 100
-    tau_max = 0.5  # More than double the Rabi time.
+    tau_max = 2  # More than double the Rabi time. # Tau_max = 0.5 looked interesting
     taus = np.linspace(0, tau_max, n_taus)
-    Cs = np.zeros((n_taus, 1))
-    m_trials = 50
+    Cs = 1j*np.zeros((n_taus, 1), dtype=np.complex)
+    m_trials = 500
 
     A = np.array([[0, 0], [1, 0]])
     B = np.array([[0, 1], [0, 0]])   # Note Adagger = B
@@ -208,11 +208,15 @@ def run_1c():
             a2_bar += np.sum(chi2 * np.matmul(chi2, B))/(len(a0)*m_trials)
             a3_bar += np.sum(chi3 * np.matmul(chi3, B))/(len(a0)*m_trials)
         Cs[i] = 0.25 * (mu_0*a0_bar - mu_1*a1_bar + 1j*mu_2*a2_bar - 1j*mu_3*a3_bar)
+        if i % int(n_taus/20) == 0:
+            print(i*5)  # 5 % completion print statements
 
     spectrum = np.fft.fft(Cs)
     freqs = np.fft.fftfreq(len(Cs), float(tau_max)/n_taus)
     plt.figure()
-    plt.plot(freqs, np.abs(spectrum))  # Looking for a big peak around Omega = 6Gamma
+    plt.plot(freqs, np.abs(spectrum)**2, 'o')  # Looking for a big peak around Omega = 6Gamma
+    plt.xlabel("Frequency Detuning")
+    plt.ylabel("Power")
     plt.show()
 
 # Problem 2
