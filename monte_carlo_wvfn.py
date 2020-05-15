@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy
 
 np.random.seed(1)   # Use the same seed to get consistent results. Comment out this line for random seed
 
@@ -210,8 +209,8 @@ def run_1c():
             a3_bar += np.sum(chi3 * np.matmul(chi3, B))/(len(a0)*m_trials)
         Cs[i] = 0.25 * (mu_0*a0_bar - mu_1*a1_bar + 1j*mu_2*a2_bar - 1j*mu_3*a3_bar)
 
-    spectrum = scipy.fft.fft(Cs)
-    freqs = scipy.fft.fftfreq(len(Cs), float(tau_max)/n_taus)
+    spectrum = np.fft.fft(Cs)
+    freqs = np.fft.fftfreq(len(Cs), float(tau_max)/n_taus)
     plt.figure()
     plt.plot(freqs, np.abs(spectrum))  # Looking for a big peak around Omega = 6Gamma
     plt.show()
