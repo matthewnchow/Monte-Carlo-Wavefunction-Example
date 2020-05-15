@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-np.random.seed(1)   # Using the same seed to get consistent results. Comment out this line for random seed
+np.random.seed(1)   # Use the same seed to get consistent results. Comment out this line for random seed
 
 # Problem 1a
 # Model of decaying Rabi oscillations for a 2 lvl system. Working in the {|g> , |e>} basis
@@ -17,7 +17,7 @@ def run_1a():
     psi_0 = np.array([1, 0])                        # Assume atom starts in the ground state
     psi = 1j*np.zeros((t_steps, 2))                 # Wavefunction at each time step
     psi[0] = psi_0
-    sigma_x = np.array([[0, 1], [1, 0]])
+    sigma_x = np.array([[0, 1], [1, 0]])            # = Sigma+ + sigma-
     proj_e = np.array([[0, 0], [0, 1]])
     h_eff = -0.5j * proj_e - 1 * Omega*0.5*sigma_x            # Effective Hamiltonian
 
@@ -39,7 +39,7 @@ def run_1a():
         return c
 
     psi = unravel_rabi()
-    p_g = np.abs(psi[:, 0])**2
+    p_g = np.abs(psi[:, 0])**2      # Population in the ground state
     p_e = np.abs(psi[:, 1])**2
 
     fig, ax = plt.subplots(nrows=1, ncols=2)
@@ -85,9 +85,9 @@ def run_1b():
     proj_e = np.array([[0, 0], [0, 1]])
     h_eff = -0.5j * proj_e - 1 * Omega*0.5*sigma_x            # Effective Hamiltonian
 
-    def unravel_rabi_wait(h_e=h_eff, steps=t_steps, c_0=psi_0):
+    def unravel_rabi_wait(h_e=h_eff, c_0=psi_0, steps=t_steps, t_i=t_initial, t_f=t_final):
         # Function for calculating a single unravelling
-        dt = float(t_final - t_initial) / steps  # time step
+        dt = float(t_f - t_i) / steps  # time step
         c = 1j * np.zeros((steps, 2))  # Variable for storing coefficients of wavefunction at each time step
         c[0] = c_0
         eta = np.random.rand()
@@ -140,19 +140,20 @@ def run_1b():
 
 
 def run_1c():
-    # trap_w = 0.1 / 5  # ~100 kHz trap frequency shown, divided by 5MHz (approx linewidth of Cs)
     t_initial = 0  # time variable, in units of 1/Gamma, where Gamma is the lifetime of |e>
-    t_final = 100  # Go out to steady state times (1/Gamma)
+    t_final = 25   # Go out to steady state times (1/Gamma) for the first interval
+    tau = 50       # Go a bit further for second time interval
 
     Omega = 6  # Rabi frequency
-    t_steps = 2500  # Number of time steps per unravelling
+    t_steps = 2500  # Number of time steps per unravelling per interval
     ts = np.linspace(t_initial, t_final, t_steps)  # Array of times
+    taus = np.linspace(t_final, tau, t_steps)
     psi_0 = np.array([1, 0])  # Assume atom starts in the ground state
     psi = 1j * np.zeros((t_steps, 2))  # Wavefunction at each time step
     psi[0] = psi_0
     sigma_x = np.array([[0, 1], [1, 0]])
     proj_e = np.array([[0, 0], [0, 1]])
-    h_eff = -0.5j * proj_e - 1 * Omega * 0.5 * sigma_x  # Effective Hamiltonian, need to add in the trap part and detuning
+    h_eff = -0.5j * proj_e - 1 * Omega * 0.5 * sigma_x  # Effective Hamiltonian
 
     def unravel_rabi_wait(h_e=h_eff, steps=t_steps, c_0=psi_0):
         # Function for calculating a single unravelling
@@ -225,14 +226,22 @@ def run_2():
     t_steps = 1000                                  # Number of time steps per unravelling
     ts = np.linspace(t_initial, t_final, t_steps)   # Array of times
 
+    # Lindblad jump operators for q = 0, +1, -1 (denoted 2 bc minus is hard in name)
+    d_q0 = 1j*np.zeros((6, 6))
+    d_q0[2, 5] = 1/np.sqrt(2)
+    d_q0[0, 3] = -1/np.sqrt(2)
+    d_q1 = 1j * np.zeros((6, 6))
+    d_q1[0, 4] = d_q1[1, 5] = 1/np.sqrt(2)
+    d_q2 = 1j * np.zeros((6, 6))
+    d_q2[1, 3] = d_q2[2, 4] = -1/np.sqrt(2)
+    d_q = [d_q0, d_q1, d_q2]
+
     # First work in the Z basis
     psi_0 = np.array([1, 0, 0, 0, 0, 0])                     # Assume atom starts in the mz = -1 state
     psi_dark = np.array([1, 0, 1, 0, 0, 0])/np.sqrt(2)       # dark state in the Z basis
-    psi = 1j*np.zeros((t_steps, len(psi_0)))                 # Wavefunction at each time step
-    psi[0] = psi_0
 
     d_y = 1j*np.zeros((len(psi_0), len(psi_0)))
-    d_y[0, 4] = d_y[1, 5] = 1j                               # Note, this is really Dy dagger in Z basis
+    d_y[0, 4] = d_y[1, 5] = 1j
     d_y[1, 3] = d_y[2, 4] = -1j
     d_y *= 0.5
     # print(d_y)
@@ -242,45 +251,37 @@ def run_2():
     h_eff = -0.5j * proj_e - 1 * Omega*0.5*(d_y + np.transpose(np.conjugate(d_y)))          # Effective Hamiltonian
     # print(h_eff - np.transpose(np.conjugate(h_eff)))
 
-    # Lindblad jump operators:
-    sig_plus = 1j * np.zeros((len(psi_0), len(psi_0)))
-    sig_plus[0, 4] = 1
-
-    sig_min = 1j * np.zeros((len(psi_0), len(psi_0)))
-    sig_min[2, 4] = 1
-
-    l_z = [sig_plus, sig_min]
-
-    def unravel_y(h=h_eff, steps=t_steps, c_0=psi_0, ls=l_z):
+    def unravel(h=h_eff, c_0=psi_0, ls=d_q, steps=t_steps, t_i=t_initial, t_f=t_final):
         # Function for calculating a single unravelling
-        dt = float(t_final - t_initial) / steps  # time step
-        c = 1j * np.zeros((steps, len(psi_0)))  # Variable for storing coefficients of wavefunction at each time step
+        dt = float(t_f - t_i) / steps  # time step
+        c = 1j * np.zeros((steps, len(psi_0)))  # Wavefunction coefficients
         c[0] = c_0
         h_jump = h - np.transpose(np.conjugate(h))
 
         # Take a bunch of time steps in loop below to propagate wvfn
         for i in range(1, steps):
-            dp = dt * 1j*np.dot(np.conjugate(c[i-1]), np.matmul(h_jump, c[i-1]))  # Jump prob
+            dp = dt * 1j * np.dot(np.conjugate(c[i - 1]), np.matmul(h_jump, c[i - 1]))  # Jump prob
             epsilon = np.random.rand()
             jump = epsilon < dp
             if jump:
                 cumulative_dpm = 0
-                # Calculate each jump probability, if epsilon less than the sum of the dpm up to this point, select jump
+                # Calculate each jump probability
+                # If epsilon < Sum of dpm up to this point, select jump
                 for L in ls:
-                    c[i] = np.matmul(L, c[i-1])  # Temporary, just used to calc dpm
-                    dpm = dt*np.abs(np.dot(c[i], np.conjugate(c[i])))  # See Molmer eqn
+                    c[i] = np.matmul(L, c[i - 1])  # Temporary, used to calc dpm
+                    dpm = dt * np.abs(np.dot(c[i], np.conjugate(c[i])))
                     cumulative_dpm += dpm
                     if epsilon < cumulative_dpm:
-                        c[i] /= np.sqrt(dpm/dt)
+                        c[i] /= np.sqrt(dpm / dt)
                         break
-            else:                                # Evolve according to H_effective and re-normalize
-                c[i] = c[i-1] - 1j * dt * np.matmul(h, c[i - 1])
-                c[i] = c[i]/(np.dot(c[i], np.conjugate(c[i])))
+            else:
+                # Evolve according to H_effective and re-normalize
+                c[i] = c[i - 1] - 1j * dt * np.matmul(h, c[i - 1])
+                c[i] = c[i] / np.abs((np.dot(c[i], np.conjugate(c[i]))))
         return c
 
-    psi = unravel_y()
+    psi = unravel()
     p_d = np.abs(np.matmul(psi, psi_dark))**2  # probability of being in the dark state
-    # print(np.abs(np.matmul(psi[1:5, :], psi_dark))**2)
 
     fig, ax = plt.subplots(nrows=2, ncols=2)
     # fig.suptitle('Problem 2: Simulation of Evolution to Dark State')
@@ -290,13 +291,12 @@ def run_2():
     ax[0, 0].set_ylabel("Prob to be in |dark>")
     ax[0, 0].set_ylim(0, 1)
 
-
     m_trials = 100                 # Molmer averages 100 wvfns
     p_ds = np.zeros((m_trials, len(p_d)))
     p_ds[0] = p_d
 
     for m in range(1, m_trials):
-        psi = unravel_y()
+        psi = unravel()
         p_ds[m] = np.abs(np.matmul(psi, psi_dark)) ** 2
 
     uncertainty = np.std(p_ds, 0)/np.sqrt(m_trials)
@@ -308,85 +308,42 @@ def run_2():
     ax[1, 0].set_ylabel("Prob to be in |dark>")
     ax[1, 0].set_ylim(-0.05, 1)
 
-
-    # Now repeat the problem in the y basis
-    # psi_0y = np.array([0.5, 1j/np.sqrt(2), 0.5, 0, 0, 0])   # Assume atom starts in the mz = -1 state
-    psi_0y = np.array([1, 1, 0, 0, 0, 0])/np.sqrt(2)   # Assume atom starts in the mz = -1 state
+    # Now repeat the problem in the Y basis
+    psi_0y = np.array([0.5, 1j/np.sqrt(2), 0.5, 0, 0, 0])    # Assume atom starts in the mz = -1 state
     psi_darky = np.array([0, 1, 0, 0, 0, 0])                 # dark state in the y basis
     psi = 1j*np.zeros((t_steps, len(psi_0)))                 # Wavefunction at each time step
     psi[0] = psi_0
 
     d_yy = 1j*np.zeros((len(psi_0y), len(psi_0y)))
-    d_yy[0, 3] = -1                                             # Note, this is really Dy dagger in Z basis
+    d_yy[0, 3] = -1
     d_yy[2, 5] = 1
     d_yy *= 0.5
     # print(d_yy)
 
-    """
-    l_pi_plus = 1j*np.zeros((len(psi_0y), len(psi_0y)))          # Lindblad jump operator for pi transition b/w g/e m=+1
-    l_pi_plus[2, 5] = 1                                             # Puts excited +1 into +1 ground
-    l_pi_min = 1j*np.zeros((len(psi_0y), len(psi_0y)))          # Lindblad jump operator for pi transition b/w g/e m=-1
-    l_pi_min[0, 3] = 1
-    l_sig_plus = 1j*np.zeros((len(psi_0y), len(psi_0y)))         # Lindblad jump operator for sigma trans |+e> -> |0g>
-    l_sig_plus[1, 5] = 1                                            # Puts excited -1 into 0 ground
-    l_sig_min = 1j*np.zeros((len(psi_0y), len(psi_0y)))         # Lindblad jump operator for sigma trans |-e> -> |0g>
-    l_sig_min[1, 3] = 1
-    l_y = [l_pi_plus, l_pi_min, l_sig_plus, l_sig_min]
-    print(l_pi_min)
-    print(np.matmul(l_pi_min, np.array([0, 0, 0, 1, 0, 0])))
-    print(np.dot(psi_darky, np.matmul(l_pi_min, np.array([0, 0, 0, 1, 0, 0]))))
-    """
-
-    Omega = 3                                       # Rabi frequency
-    t_steps = 1000                                  # Number of time steps per unravelling
-
-    l_pi = 1j*np.zeros((len(psi_0y), len(psi_0y)))          # Lindblad jump operator for (both) pi transitions
-    l_pi[2, 5] = l_pi[0, 3] = 1/np.sqrt(2)                                             # Puts excited +/-1 into +/-1 ground
-    l_sig = 1j*np.zeros((len(psi_0y), len(psi_0y)))         # Lindblad jump operator for (both) sigma transitions
-    l_sig[1, 5] = l_sig[1, 3] = 1/np.sqrt(2)                                           # Puts excited +/-1 into 0 ground
-    l_y = [l_pi, l_sig]
-    print(l_pi)
-    bright = np.matmul(l_pi, np.array([0, 0, 0, 1, 0, 1]))
-    print(bright)
     h_effy = -0.5j * proj_e - 1 * Omega*0.5*(d_yy + np.transpose(np.conjugate(d_yy)))          # Effective Hamiltonian
-    print(h_effy)
-    print(np.matmul(d_yy, psi_darky))
-
-    h_jumpy = h_effy - np.transpose(np.conjugate(h_effy))
-    print(np.dot(np.conjugate(psi_darky), np.matmul(h_jumpy, psi_darky)))
-    # for i in range(t_steps):
-    #     psi
-
     # print(h_effy)
-    # print(h_effy - np.transpose(np.conjugate(h_effy)))
-
-    # p_e = np.abs(np.matmul(psi, np.array([0, 0, 0, 1, 1, 1])))**2  # probability of being in any excited state
-    # print(np.abs(np.matmul(psi[1:5, :], psi_dark))**2)
 
     m_trials = 100                # Molmer averages 100 wvfns
     p_ds = np.zeros((m_trials, t_steps))
 
     for m in range(m_trials):
-        psi = unravel_y(h=h_effy, c_0=psi_0y, ls=l_y)
+        psi = unravel(h=h_effy, c_0=psi_0y, ls=d_q)
         # check_norm = np.abs(np.linalg.norm(psi, axis=1)) ** 2         # make sure that the norm is 1
         # p_not_d = np.abs(np.matmul(psi, np.array([1, 0, 1, 1, 1, 1]))) ** 2  # probability of not dark state
         p_d = np.abs(np.matmul(psi, psi_darky)) ** 2  # probability of being in the dark state
         p_0 = np.abs(np.matmul(psi, np.array([1, 0, 0, 0, 0, 0]))) ** 2  # probability of being in -1 ground
-        p_3 = np.abs(np.matmul(psi, np.array([0, 0, 0, 1, 0, 0]))) ** 2  # probability of being in -1 ground
-        if m < 1:
+        p_3 = np.abs(np.matmul(psi, np.array([0, 0, 0, 1, 0, 0]))) ** 2  # probability of being in -1 excited
+        if m < 1:  # Plot trajectories up to this value on the individual trajectory plot
             ax[0, 1].plot(ts, p_d)
-            # plt.figure(m)  #  Debugging, plot to look at various populations over time
+            # plt.figure(m)  #  Debugging, plot to look at various populations and norm over time
             # plt.plot(ts, p_0)
             # plt.plot(ts, p_3)
             # plt.plot(ts, p_d, 'k')
+            # plt.plot(ts, check_norm)
             # plt.ylim(-0.05, 1.05)
-        # if m == 3:
-        #     break
         p_ds[m] = p_d
-    # ax[0, 1].plot(ts, p_d)
     ax[0, 1].set_title("Single Trajectory, Y Basis")
     ax[0, 1].set_ylim(-0.05, 1.05)
-
 
     uncertainty = np.std(p_ds, 0)/np.sqrt(m_trials)
 
@@ -395,7 +352,6 @@ def run_2():
     ax[1, 1].set_title("Average of %i Trajectories" % m_trials)
     ax[1, 1].set_xlabel("Time (1/Gamma)")
     ax[1, 1].set_ylim(-0.05, 1)
-
 
 
 # run_1a()
