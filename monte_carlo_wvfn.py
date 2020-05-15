@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy
 
 np.random.seed(1)   # Use the same seed to get consistent results. Comment out this line for random seed
 
@@ -79,81 +80,10 @@ def run_1b():
     t_steps = 1000                                  # Number of time steps per unravelling
     ts = np.linspace(t_initial, t_final, t_steps)   # Array of times
     psi_0 = np.array([1, 0])                        # Assume atom starts in the ground state
-    psi = 1j*np.zeros((t_steps, 2))                 # Wavefunction at each time step
-    psi[0] = psi_0
     sigma_x = np.array([[0, 1], [1, 0]])
     proj_e = np.array([[0, 0], [0, 1]])
     h_eff = -0.5j * proj_e - 1 * Omega*0.5*sigma_x            # Effective Hamiltonian
 
-    def unravel_rabi_wait(h_e=h_eff, c_0=psi_0, steps=t_steps, t_i=t_initial, t_f=t_final):
-        # Function for calculating a single unravelling
-        dt = float(t_f - t_i) / steps  # time step
-        c = 1j * np.zeros((steps, 2))  # Variable for storing coefficients of wavefunction at each time step
-        c[0] = c_0
-        eta = np.random.rand()
-        c_t = c_0*(-1j)**2
-
-        # Take a bunch of time steps in loop below to propagate wvfn
-        for i in range(1, steps):
-            # calculate the norm of the wvfn and compare to chosen random number
-            norm2 = np.abs(np.dot(c_t, np.conjugate(c_t)))
-            jump = (norm2 <= eta)
-            if jump:                             # Would have to figure out which kind of jump if there were multiple
-                c[i] = np.array([1, 0])          # All population moves to ground state if there is a jump
-
-                eta = np.random.rand()           # Also pick a new random number
-                c_t = c[i]                       # And reset numerical integration state
-            else:                                # Evolve according to H_effective and re-normalize
-                c[i] = c[i-1] - 1j * dt * np.matmul(h_e, c[i - 1])
-                c[i] = c[i]/(np.dot(c[i], np.conjugate(c[i])))
-                c_t -= 1j * dt * np.matmul(h_e, c_t)  # Performing numerical integration of differential propagator
-        return c
-
-    psi = unravel_rabi_wait()
-    p_g = np.abs(psi[:, 0])**2
-    p_e = np.abs(psi[:, 1])**2
-
-    fig, ax = plt.subplots(nrows=1, ncols=2)
-    fig.suptitle('Problem 1b: Decaying Rabi Oscillations, Calculated with wait time distribution')
-
-    ax[0].plot(ts, p_e)
-    ax[0].set_title("Single Trajectory")
-    ax[0].set_xlabel("Time (1/Gamma)")
-    ax[0].set_ylabel("Prob to be in |e>")
-    ax[0].set_ylim(0, 1)
-
-    m_trials = 100                 # Molmer averages 100 wvfns
-    p_es = np.zeros((m_trials, len(p_e)))
-    p_es[0] = p_e
-
-    for m in range(1, m_trials):
-        psi = unravel_rabi_wait()
-        p_es[m] = np.abs(psi[:, 1])**2
-
-    uncertainty = np.std(p_es, 0)/np.sqrt(m_trials)
-
-    ax[1].errorbar(ts, np.mean(p_es, 0), uncertainty)
-    ax[1].plot(ts, np.mean(p_es, 0), 'r')  # Center line plotted in red for clarity
-    ax[1].set_title("Average of %i Trajectories" % m_trials)
-    ax[1].set_xlabel("Time (1/Gamma)")
-    ax[1].set_ylim(0, 1)
-
-
-def run_1c():
-    t_initial = 0  # time variable, in units of 1/Gamma, where Gamma is the lifetime of |e>
-    t_final = 25   # Go out to steady state times (1/Gamma) for the first interval
-    tau = 50       # Go a bit further for second time interval
-
-    Omega = 6  # Rabi frequency
-    t_steps = 2500  # Number of time steps per unravelling per interval
-    ts = np.linspace(t_initial, t_final, t_steps)  # Array of times
-    taus = np.linspace(t_final, tau, t_steps)
-    psi_0 = np.array([1, 0])  # Assume atom starts in the ground state
-    psi = 1j * np.zeros((t_steps, 2))  # Wavefunction at each time step
-    psi[0] = psi_0
-    sigma_x = np.array([[0, 1], [1, 0]])
-    proj_e = np.array([[0, 0], [0, 1]])
-    h_eff = -0.5j * proj_e - 1 * Omega * 0.5 * sigma_x  # Effective Hamiltonian
 
     def unravel_rabi_wait(h_e=h_eff, steps=t_steps, c_0=psi_0):
         # Function for calculating a single unravelling
@@ -178,7 +108,7 @@ def run_1c():
                 c[i] = c[i - 1] - 1j * dt * np.matmul(h_e, c[i - 1])
                 c[i] = c[i] / (np.dot(c[i], np.conjugate(c[i])))
                 c_t -= 1j * dt * np.matmul(h_e, c_t)  # Performing numerical integration of differential propagator
-        return c, photons
+        return c
 
 
     psi = unravel_rabi_wait()
@@ -210,6 +140,81 @@ def run_1c():
     ax[1].set_xlabel("Time (1/Gamma)")
     ax[1].set_ylim(0, 1)
 
+
+def run_1c():
+    t_initial = 0  # time variable, in units of 1/Gamma, where Gamma is the lifetime of |e>
+    t_final = 25   # Go out to steady state times (1/Gamma) for the first interval
+
+    Omega = 6  # Rabi frequency
+    t_steps = 2500  # Number of time steps per unravelling per interval
+    psi_0 = np.array([1, 0])  # Assume atom starts in the ground state
+
+    sigma_x = np.array([[0, 1], [1, 0]])
+    proj_e = np.array([[0, 0], [0, 1]])
+    h_eff = -0.5j * proj_e - 1 * Omega * 0.5 * sigma_x  # Effective Hamiltonian
+
+
+    def unravel_rabi(h_e=h_eff, c_0=psi_0, t_i=t_initial, t_f=t_final, steps=t_steps):
+        # Function for calculating a single unravelling
+        dt = float(t_f - t_i) / steps  # time step
+        c = 1j * np.zeros((steps, 2))  # Variable for storing coefficients of wavefunction at each time step
+        c[0] = c_0
+
+        # Take a bunch of time steps in loop below to propagate wvfn
+        for i in range(1, steps):
+            prob_jump = np.abs(c[i-1, 1])**2 * dt               # Prob = (Gamma=1) * |ce|^2 * dt
+            jump = np.random.rand() < prob_jump
+            if jump:                             # Would have to figure out which kind of jump if there were multiple
+                c[i] = np.array([1, 0])        # All population moves to ground state if there is a jump
+            else:                                # Evolve according to H_effective and re-normalize
+                c[i] = c[i-1] - 1j * dt * np.matmul(h_e, c[i - 1])
+                c[i] = c[i]/(np.dot(c[i], np.conjugate(c[i])))
+        return c
+
+    n_taus = 100
+    tau_max = 0.5  # More than double the Rabi time.
+    taus = np.linspace(0, tau_max, n_taus)
+    Cs = np.zeros((n_taus, 1))
+    m_trials = 50
+
+    A = np.array([[0, 0], [1, 0]])
+    B = np.array([[0, 1], [0, 0]])   # Note Adagger = B
+    for i in range(n_taus):
+        a0_bar = 0
+        a1_bar = 0
+        a2_bar = 0
+        a3_bar = 0
+        for m in range(m_trials):
+            psi = unravel_rabi()
+            psi_t = psi[len(psi)-1]
+            chi0_0 = psi_t + np.matmul(B, psi_t)
+            mu_0 = np.sqrt(np.abs(np.dot(chi0_0, np.conjugate(chi0_0))))
+            chi0_0 = chi0_0/np.sqrt(mu_0)
+            chi0_1 = psi_t - np.matmul(B, psi_t)
+            mu_1 = np.sqrt(np.abs(np.dot(chi0_1, np.conjugate(chi0_1))))
+            chi0_1 = chi0_1 / np.sqrt(mu_1)
+            chi0_2 = psi_t + 1j*np.matmul(B, psi_t)
+            mu_2 = np.sqrt(np.abs(np.dot(chi0_2, np.conjugate(chi0_2))))
+            chi0_2 = chi0_2 / np.sqrt(mu_2)
+            chi0_3 = psi_t - 1j*np.matmul(B, psi_t)
+            mu_3 = np.sqrt(np.abs(np.dot(chi0_3, np.conjugate(chi0_3))))
+            chi0_3 = chi0_3 / np.sqrt(mu_3)
+            chi0 = unravel_rabi(c_0=chi0_0, t_f=taus[i], steps=int((taus[i]+1)*50))
+            chi1 = unravel_rabi(c_0=chi0_1, t_f=taus[i], steps=int((taus[i]+1)*50))
+            chi2 = unravel_rabi(c_0=chi0_2, t_f=taus[i], steps=int((taus[i]+1)*50))
+            chi3 = unravel_rabi(c_0=chi0_3, t_f=taus[i], steps=int((taus[i]+1)*50))
+            a0 = np.matmul(chi0, B)  # c+/- and cprime +/- in Molmer
+            a0_bar += np.sum(chi0 * a0)/(len(a0)*m_trials)  # gives average over times t to tau and 0 to t
+            a1_bar += np.sum(chi1 * np.matmul(chi1, B))/(len(a0)*m_trials)
+            a2_bar += np.sum(chi2 * np.matmul(chi2, B))/(len(a0)*m_trials)
+            a3_bar += np.sum(chi3 * np.matmul(chi3, B))/(len(a0)*m_trials)
+        Cs[i] = 0.25 * (mu_0*a0_bar - mu_1*a1_bar + 1j*mu_2*a2_bar - 1j*mu_3*a3_bar)
+
+    spectrum = scipy.fft.fft(Cs)
+    freqs = scipy.fft.fftfreq(len(Cs), float(tau_max)/n_taus)
+    plt.figure()
+    plt.plot(freqs, np.abs(spectrum))  # Looking for a big peak around Omega = 6Gamma
+    plt.show()
 
 # Problem 2
 # Model of CPT for atom driven on |g, J=1> to |e, J=1 excited>.
@@ -356,7 +361,8 @@ def run_2():
 
 # run_1a()
 # run_1b()
-run_2()
+# run_2()
+run_1c()
 
 plt.show()
 
