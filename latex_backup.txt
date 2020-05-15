@@ -28,19 +28,19 @@ In this problem, we are asked to find the dynamics of a resonantly driven two le
   \frac{\partial \rho}{\partial t} = -\frac{i}{\hbar}[H_{eff}, \rho]^{'} + \Gamma\sigma_{-}\rho\sigma_{+}   
 \end{equation}
 
-where
+where the effective Hamiltonian is 
 \begin{equation}
   H_{eff} = -i \frac{\hbar\Gamma}{2} \ket{e}\bra{e} - \frac{\hbar\Omega}{2}(\sigma_{-} + \sigma_{+})  
 \end{equation}
 
 
-Here \(\ket{e}\) is the excited state of the two level atom, \(\Gamma\) is the natural linewidth of the transition, \(\hbar\) is reduced Plank's constant \(\Omega\) is the Rabi frequency, and \(\sigma_{-, +}\) are the raising and lowering operators.
-First, we are asked to follow exactly Molmer's notes and reproduce Fig. 3 \cite{Molmer}. The algorithm detailed by Molmer tells us how to find the propagation of an ensemble by calculation of many stochastic quantum trajectories. \footnote{Note that in this discussion, I assume an initially pure state. If the initial state is a mixed state, the result would be the convex combination of pure states, each propagated by the QMC algorithm.} To find a single trajectory, we take small steps in time and at each step, we draw a random number\footnote{All random numbers discussed are sampled uniformly on [0,1) }, \(\epsilon\), and compare to the probability of the making a jump during that time interval:
+Here \(\ket{e}\) is the excited state of the two level atom, \(\Gamma\) is the natural linewidth of the transition, \(\rho\) is the density matrix, \(\hbar\) is reduced Plank's constant \(\Omega\) is the Rabi frequency, and \(\sigma_{-, +}\) are the raising and lowering operators.
+First, we are asked to follow exactly Molmer's notes\cite{Molmer} and reproduce his Fig. 3. The algorithm detailed by Molmer tells us how to find the propagation of a quantum state by calculation of many stochastic quantum trajectories. \footnote{Note that in this discussion, I assume an initially pure state. If the initial state is a mixed state, the result would be the convex combination of pure states, each propagated by the QMC algorithm.} To find a single trajectory, we take small steps in time and at each step, we draw a random number\footnote{All random numbers discussed are sampled uniformly on [0,1) }, \(\epsilon\), and compare to the probability of the making a jump during that time interval\cite{Molmer}:
 \begin{equation}
 \label{eq:dp}
-  \delta p = \delta t \frac{i}{\hbar} \bra{\psi(t)}(H_{eff} - H_{eff}^{\dagger}\ket{\psi(t)}  
+  \delta p = \delta t \frac{i}{\hbar} \bra{\psi(t)}(H_{eff} - H_{eff}^{\dagger})\ket{\psi(t)}  
 \end{equation}
-where \(\psi(t)\) is the instantaneous wavefunction \cite{Molmer}. In the case of damped Rabi oscillations, this is simply given by the population of the excited state, multiplied by the decay rate and the time interval\cite{Molmer}.
+where \(\psi(t)\) is the instantaneous wavefunction. In the case of damped Rabi oscillations, this is simply given by the population of the excited state, multiplied by the decay rate and the time interval\cite{Molmer}.
 \begin{equation}
     \delta p = \Gamma |c_{e}|^{2}dt
 \end{equation}
@@ -52,9 +52,9 @@ If \(\epsilon >  \delta p\), then we have no quantum jump (as must be true in mo
 
 where we must re-normalize the state, given the non-Hermitian nature of \(H_{eff}\). The effects of this non-Hermitian evolution will play a strong role in the discussion of optical pumping in Section 2.
 
-If \(\epsilon < \delta p\), then we \textit{do} have a quantum jump. To realize the jump, we apply our Lindblad jump operator. In the case of the spontaneous emission in the two level atom, this simply results in the atom going to its ground state \(\ket{\psi(t + \delta t)} = \ket{g}\). Generally, if we have many possible jumps, then we must choose which jump happens, and apply the appropriate jump operator. This is described in problem two, when we look at an optical pumping problem. 
+If \(\epsilon < \delta p\), then we \textit{do} have a quantum jump. To realize the jump, we apply our Lindblad jump operator. In the case of the spontaneous emission in the two level atom, this simply results in the atom going to its ground state \(\ket{\psi(t + \delta t)} = \ket{g}\). Generally, if we have many possible jumps, then we must choose which jump happens, and apply the appropriate jump operator. Again, further discussion is reserved for Section 2. 
 
-As described in lecture, note that at all times, the state of the system in a single trajectory is a pure state. By averaging the results of many trajectories, we converge towards the solution of the master equation. This is equivalent to averaging over many measurement records, or tracing out the environment. In the case of the two level atom and the damped Rabi oscillations, we can think of each individual trajectory as a run of the experiment, where we collect the emitted photons with unit efficiency. Averaging over many trajectories is then equivalent to running the experiment many times and averaging the results. Our statistical error on the expectation value of an operator (\textit{A}) after \textit{m} averages is given in Molmer \cite{Molmer}
+As described in lecture, note that at all times, the state of the system in a single trajectory is a pure state. By averaging the results of many trajectories, we converge towards the solution of the master equation. This is equivalent to averaging over many measurement records, or tracing out the environment. In the case of the two level atom and the damped Rabi oscillations, we can think of each individual trajectory as a run of the experiment, where we collect the emitted photons with unit efficiency. Averaging over many trajectories is then equivalent to running the experiment many times and averaging the results. Our statistical error on the expectation value of an operator (\textit{A}) after averaging \textit{m} trajectories is given in Molmer \cite{Molmer}
 \begin{equation}
   \delta A_{m} = \frac{\Delta A_{m}}{\sqrt{m}}  
 \end{equation}
@@ -66,7 +66,7 @@ To recreate Molmer's Figure 3, I wrote a Monte Carlo script to calculate 100 tra
 \begin{figure}[H]
     \centering
     \includegraphics[width=100mm]{1a.png}
-    \caption{Solution to 1a: Recreation of Figure 3 from Molmer, using the QMC method. On the left is a single trajectory, in which we see Rabi flops, interrupted by random jumps to the ground state. On the right is an average of 100 such trajectories, which results in damped Rabi oscillations. The red line is the mean, blue error bars plotted at each point appear as a statistical confidence interval at each point. Note that as the oscillations decay, the error increases. This is because after sufficient time, the phase of the Rabi cycle for any single trajectory is randomized due to the random timing of the jumps, leading to variation when considering an ensemble average.}
+    \caption{Solution to 1a: Recreation of Figure 3 from Molmer, using the QMC method. On the left is a single trajectory, in which we see Rabi flops, interrupted by random jumps to the ground state. On the right is an average of 100 such trajectories, which results in damped Rabi oscillations. The red line is the mean, blue error bars plotted at each point appear as a statistical confidence interval at each point. Note that as the oscillations decay, the error increases. This is because after sufficient time, the phase of the Rabi cycle is randomized due to the random timing of the jumps, leading to variation when considering an ensemble average.}
     \label{fig:1a}
 \end{figure}
 
@@ -88,7 +88,7 @@ We jump!
     \caption{Solution to 1b: Second recreation of Figure 3 from Molmer, calculated using the sample from wait time distribution method. This matches well with the results from Problem 1a. See appendix for code.}
     \label{fig:1b}
 \end{figure}
-I wrote a new ``unravel" function to reflect this modification to the algorithm, and the results are summarized in Fig. \ref{fig:1b}. Note that I have numerically integrated the differential propagator when monitoring the norm, but that an analytic solution may improve computation time. 
+I wrote a new ``unravel" function to reflect this modification to the algorithm, and the results are summarized in Fig. \ref{fig:1b}. Note that I have numerically integrated when monitoring the norm, but that an analytic solution may improve computation time. 
 
 \section{Coherent Population Trapping in Zeeman Degenerate Atom}
 
@@ -97,12 +97,13 @@ In this problem, we consider the evolution of an atom with degenerate Zeeman lev
 \begin{figure}[H]
     \centering
     \includegraphics[width=80mm]{j1_lvls.png}
-    \caption*{Figure 10 from Molmer\cite{Molmer}, ripped off without permission. Level structure of our toy model atom. In (a), level structure in the z basis, sigma light couples the m = +/-1 ground states to the m=0 excited state. In (b), level structure in the y basis, pi light couples m=+/-1 ground to m=+/-1 excited. Note that the J=1, m=0 ground to J=1, m=0 excited transition is dipole forbidden.}
+    \caption*{Figure 10 from Molmer\cite{Molmer}, ripped off without permission. Level structure of our toy model atom. In (a), level diagram in the Z basis. Right and left circularly polarized light about the quantization axis drive \(\sigma_{+}\) and \(\sigma_{-}\) transitions. This couples the \(\ket{g-}_{z}\) and \(\ket{g+}_{z}\) to \(\ket{e0}_{z}\). In (b), level diagram in the Y basis. Linearly polarized light along the quantization axis drives \(\pi\) transitions. This couples \(\ket{g-}_{y} \,, \ket{g+}_{y}\) to \(\ket{e-}_{y} \,, \ket{e+}_{y}\) respectively. Note that the J=1, m=0 ground to J=1, m=0 excited transition is dipole forbidden.}
     \label{fig:lvls}
 \end{figure}
 
 Taking the light polarization to be along the \(\textbf{e}_{y}\) direction, the system is described by Hamiltonian
 \begin{equation}
+\label{eq:H}
   H_{eff} = H - i\frac{\hbar\Gamma}{2}P_{e}  
 \end{equation}
 
@@ -116,8 +117,9 @@ Where
 \begin{equation}
   D_{y}^{\dagger} = \sum_{q=-1, 0, +1}D_{q}^{\dagger} \Dot{\textbf{e}_{y} \textbf{e}_{q}}  
 \end{equation}
-Where \(\textbf{e}_{q}\) are the spherical basis vectors.
+Where \(\textbf{e}_{q}\) are the spherical basis vectors. The Lindblad operators are given by
 \begin{equation}
+\label{eq:L}
   D_{q}^{\dagger} = \sum_{m_{e}, \, m_{g}} \bra{J_{e}=1, m_{e}}\ket{J_{g}=1, m_{g}; J=1, q} \ket{m_{e}}\bra{m_{g}}  
 \end{equation}
 
@@ -133,13 +135,7 @@ Where \(\textbf{e}_{q}\) are the spherical basis vectors.
    \end{bmatrix}
 \end{gather}
 
-Again, with ordering \{\(\ket{g-}, \ket{g0}, \ket{g+}, \ket{e-}, \ket{e0}, \ket{e+}\) \}. Here I have used a shorthand for the Clebsch-Gordan(CG) coefficients by listing only the m values, since all J values are 1. Notice that \(D_{q}^{\dagger}\) is zero except for the lower left quadrant, so in the discussion to follow, I show only the lower left quadrant of \(D^{\dagger}\) matrices. Additionally, \(|q| <= 1\) gives, \((D_{q}^{\dagger})_{6,1} = (D_{q}^{\dagger})_{4,3} = 0\) and our dipole forbidden transition \(\Delta J = 0, \Delta m = 0\) gives \((D_{q}^{\dagger})_{5,2} = 0\). The relevant CG coefficients are listed in the appendix for the remaining elements. 
-
-
-Writing out these matrices explicitly in the Z basis
-\begin{equation}
-  D_{y}^{\dagger (z)} = \frac{-i}{\sqrt{2}}(D_{q=-1}^{\dagger} + D_{q=+1}^{\dagger})  
-\end{equation}
+Again, with ordering \{\(\ket{g-}, \ket{g0}, \ket{g+}, \ket{e-}, \ket{e0}, \ket{e+}\) \}. Here I have used a shorthand for the Clebsch-Gordan(CG) coefficients by listing only the m values, since all J values are 1. Notice that \(D_{q}^{\dagger}\) is zero except for the lower left quadrant, in the discussion to follow, I show only the lower left quadrant of \(D^{\dagger}\) matrices. Additionally, \(|q| <= 1\) gives, \((D_{q}^{\dagger})_{6,1} = (D_{q}^{\dagger})_{4,3} = 0\) and our dipole forbidden transition \((\Delta J = 0, \Delta m = 0, m=0)\) gives \((D_{q}^{\dagger})_{5,2} = 0\). The relevant CG coefficients are listed in the appendix for the remaining elements. The lower left quadrants are shown for each value of q below
 
 \begin{gather}
  D_{q=-1}^{\dagger}
@@ -152,6 +148,16 @@ Writing out these matrices explicitly in the Z basis
    \end{bmatrix}
 \end{gather}
 \begin{gather}
+D_{q=0}^{\dagger}
+ \dot{=}
+ \frac{1}{\sqrt{2}}
+  \begin{bmatrix}
+   -1 & 0 & 0  \\
+   0 & 0 & 0  \\
+   0 & 0 & 1  
+   \end{bmatrix}
+\end{gather}
+\begin{gather}
  D_{q=+1}^{\dagger}
  \dot{=}
  \frac{1}{\sqrt{2}}
@@ -161,6 +167,14 @@ Writing out these matrices explicitly in the Z basis
    0 & -1 & 0  
    \end{bmatrix}
 \end{gather}
+
+
+Writing out \(D_{y}^{\dagger}\) explicitly in the Z basis\footnote{Note that this is still just the lower left quadrant of \(D^{\dagger}\) since other terms are 0.}
+
+\begin{equation}
+  D_{y}^{\dagger (z)} = \frac{-i}{\sqrt{2}}(D_{q=-1}^{\dagger} + D_{q=+1}^{\dagger})  
+\end{equation}
+
 \begin{gather}
  D_{y}^{\dagger(z)}
  \dot{=}
@@ -201,7 +215,7 @@ From this matrix, it's easy enough to find the eigenvector with eigenvalue zero.
 \end{gather}
 
 
-Similarly, we can repeat this process in the Y basis.  After changing the spherical basis vectors to be oriented along \(\textbf{e}_{y}\), only q=0 contributes to \(D_{y}^{\dagger(y)}\)\footnote{Note that this is still just the lower left quadrant of \(D^{\dagger}\) since other terms are 0.}
+Similarly, we can repeat this process in the Y basis$^{3}$.  After changing the spherical basis vectors to be oriented along \(\textbf{e}_{y}\), only q=0 contributes to \(D_{y}^{\dagger(y)}\)
 
 \begin{gather}
 D_{y}^{\dagger(y)} = D_{q=0}^{\dagger}
@@ -213,7 +227,6 @@ D_{y}^{\dagger(y)} = D_{q=0}^{\dagger}
    0 & 0 & 1  
    \end{bmatrix}
 \end{gather}
-
 \begin{gather}
   H_{eff}^{(y)} \dot{=} -\frac{\hbar}{2}
   \begin{bmatrix}
@@ -239,11 +252,11 @@ D_{y}^{\dagger(y)} = D_{q=0}^{\dagger}
     \dot{=} \ket{g0}_{y}
 \end{gather}
 
-Now we are asked to run our Monte-Carlo algorithm on this multilevel atom in both the Z and the Y basis, assuming that the state starts in \(\ket{g-}_{z}\). We hope to replicate the known result of optical pumping to the dark state, using the QMC approach. Before showing the results of running the algorithm, I should first explain the process of choosing between multiple jumps. The algorithm is the same as that described for the Rabi oscillations, except that in the event of a jump, we choose randomly amongst the Lindblad jump operators, weighted by probability of each one. The probability of a jumping with particular Lindblad jump operator \(L_{k}\), (given that a jump happened) for wavefunction \(\ket{\psi(t)}\) is given in Molmer \cite{Molmer}
+Now we are asked to run our Monte-Carlo algorithm on this multilevel atom in both the Z and the Y basis, assuming that the state starts in \(\ket{g-}_{z}\). We hope to replicate the known result of optical pumping to the dark state, using the QMC approach. Before showing the results of running the algorithm, I should first explain the process of choosing between multiple jumps. The algorithm is the same as that described for the Rabi oscillations, except that in the event of a jump, we choose randomly amongst the Lindblad jump operators, weighted by the probability of each one. Generally, the probability of a jumping with particular Lindblad jump operator \(L_{k}\), (given that a jump happened) for wavefunction \(\ket{\psi(t)}\) is given in Molmer \cite{Molmer}
 \begin{equation}
     Prob(k|jump) = \frac{\delta p_{k}}{\delta p = \sum_{k}\delta p_{k}} = \frac{\bra{\psi(t)}L^{\dagger}_{k}L_{k}\ket{\psi(t)}}{\delta p}
 \end{equation}
-Where \(\delta p\) is given in Eq \ref{eq:dp}. In order to select a jump with such weighting, I iterate through a list of all the jump operators, and at each step add \(\delta p_{k}\) to a sum variable \(\zeta\). At each step, I compare \(\zeta\) to the random number that was drawn that caused the jump, \(\epsilon\). After adding \(\delta p_{k}\), if \(\zeta > \epsilon \), then I select the jump with operator \(L_{k}\) and exit the loop. This works because \(\epsilon\) was sampled uniformly on \([0,1)\), and thus also sampled uniformly on \([0, \delta p)\). The python implementation of the algorithm produced the results in Figure \ref{fig:CPT}, and the code is included in the appendix.
+Where \(\delta p\) is given in Eq \ref{eq:dp}. In order to select a jump with such weighting, I iterate through a list of all the jump operators, and at each step add \(\delta p_{k}\) to a sum variable \(\zeta\). At each step, I compare \(\zeta\) to the random number that was drawn that caused the jump, \(\epsilon\). After adding \(\delta p_{k}\), if \(\zeta > \epsilon \), then I select the jump with operator \(L_{k}\) and exit the loop. This works because \(\epsilon\) was sampled uniformly on \([0,1)\), and thus also sampled uniformly on \([0, \delta p)\). The python implementation of the algorithm produced the results in Figure \ref{fig:CPT} using the initial state, \(\ket{\psi_{0}} = \ket{g-}_{z}\), the Lindblad operators given by Eq. \ref{eq:L} and the Hamiltonian in Eq. \ref{eq:H}. The code is included in the appendix.
 
 \begin{figure}[H]
     \centering
@@ -251,9 +264,10 @@ Where \(\delta p\) is given in Eq \ref{eq:dp}. In order to select a jump with su
     \caption{Reproduction of Figure 11 from Molmer\cite{Molmer}. Evolution towards the dark state, calculated with the QMC approach. The initial state is \(\ket{g-}_{z}\), the Rabi rate is $3\Gamma$. Notice that in the Z basis (left), the no-jump evolution drives the state towards the dark state, whereas in the Y basis(right), the dominant driver to the dark state is the sigma jump. Notice too that the error bars in the Z basis are smaller, given the ``smoother" evolution.}
     \label{fig:CPT}
 \end{figure}
-Upon inspection of Figure \ref{fig:CPT}, it is apparent that the measurement basis we choose greatly impacts our understanding of the quantum state.\footnote{Again assume unit detection efficiency for this discussion.} In the Y basis, we see sudden jumps to the dark state (upon measurement of a sigma photon), whereas in the Z basis, we see that jumps take us to 50\% probability of being in the dark state. In fact, when looking at the Z basis, it is the \textit{no jump} evolution that drives the state towards the dark state. If we are measuring in the Z basis, any photon we detect projects the state onto an equal superposition of bright and dark states. Thus for each time step that we don't see a photon, when we update the state, we think we are a little more likely to be in the dark state. As Ivan mentioned in lecture, this is like updating our prior with ``quantum Bayes rule." In either basis, in the limit of infinite time, it must be possible to evolve to the dark state without emitting a photon, since we start in a 50-50 superposition of bright and dark. This is achieved by evolution under \(H_{eff}\) during no jump times. 
+\newpage
+Upon inspection of Figure \ref{fig:CPT}, it is apparent that the measurement basis we choose greatly impacts our understanding of the quantum state.\footnote{Again assume unit detection efficiency for this discussion.} In the Y basis, we see sudden jumps to the dark state (upon measurement of a sigma photon), whereas in the Z basis, we see that jumps take us to 50\% probability of being in the dark state. In fact, when looking at the Z basis, it is the \textit{no jump} evolution that drives the state towards the dark state. If we are measuring in the Z basis, any photon we detect projects the state onto an equal superposition of bright and dark states. For each time step that we don't see a photon, when we update the state, we think we are a little more likely to be in the dark state. As Ivan mentioned in lecture, this is like updating our prior with ``quantum Bayes rule." In either basis, in the limit of infinite time, it must be possible to evolve to the dark state without emitting a photon, since we start in a 50-50 superposition of bright and dark. This is achieved by evolution under \(H_{eff}\) during no jump times. 
 
-Additionally, the information gained about the system is different in the two bases. For example, if we wanted to prepare the atom in the dark state while monitoring the fluorescence, we might want to choose the Y basis, given that any time we see a sigma photon, we immediately know we are in the dark state. If we perform this experiment without looking at the measurements, it's like averaging over many runs, and we get the same result in either basis. To model what is happening in this case, we may want to perform the QMC algorithm. If we perform the calculation in the Z basis, our error bars are much smaller (since individual trajectories are less erratic) for the same number of trajectories averaged, and thus it may be less computationally expensive to choose the Z basis in this case.
+Additionally, the information gained about the system is different in the two bases. For example, if we wanted to prepare the atom in the dark state while monitoring the fluorescence, we might want to choose the Y basis, given that any time we see a sigma photon, we immediately know we are in the dark state. If we perform this experiment without looking at the measurements, it's like averaging over many runs, and we get the same result in either basis. To model what is happening in this case, we may want to perform the QMC algorithm. If we perform the calculation in the Z basis, our error bars are much smaller (since individual trajectories are less erratic) for the same number of trajectories averaged, and thus it may be less computationally expensive to choose the Z basis for such a calculation.
 
 \newpage
 
@@ -360,10 +374,10 @@ def unravel_rabi_wait(h_e, c_0, steps=t_steps, t_i=t_initial, t_f=t_final):
 \end{verbatim}
 
 \subsection{Code for 2}
-Here the general ``unravel" function is included, which works for arbitrary \(H_{eff}\) and jump operators. Other than that, the code is the same as 1a, but with different inputs (Hamiltonian, jump operators, initial state, and projector that we care about).
+Here the general ``unravel" function is included, which works for arbitrary \(H_{eff}\) and jump operators. Other than that, the code is the same as 1a, but with different inputs (Hamiltonian, jump operators and initial state). We also project onto a different state (the dark state).
 
 \begin{verbatim}
-def unravel(h=h_eff, steps=t_steps, c_0=psi_0, ls=l_z):
+def unravel(h=h_eff, steps=t_steps, c_0=psi_0, ls=d_q):
     # Function for calculating a single unravelling
     dt = float(t_final - t_initial) / steps  # time step
     c = 1j * np.zeros((steps, len(psi_0)))  # Wavefunction coefficients
@@ -406,8 +420,8 @@ using the J1=1, J2=1 tables. Note the table below only lists mg + q = me, since 
  0 & 1 & -1 & \(\frac{1}{\sqrt{2}}\)\\  
  0 & 0 & 0 & 0\\  
  0 & -1 & 1 & \(-\frac{1}{\sqrt{2}}\)\\  
- +/-1 & 1 & 0 & +/-\(\frac{1}{\sqrt{2}}\)\\  
- +/-1 & 0 & 1 & -/+\(\frac{1}{\sqrt{2}}\)\\  
+ +/-1 & +/-1 & 0 & +/-\(\frac{1}{\sqrt{2}}\)\\  
+ +/-1 & 0 & +/-1 & -/+\(\frac{1}{\sqrt{2}}\)\\  
 \end{tabular}
 \end{center}
 
